@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from functools import wraps
-from flask import Flask, jsonify, Response, request, redirect, url_for
+from flask import Flask, jsonify, Response, request, redirect, url_for,render_template
 import flask
 import os
 from cache import MemoryCache
@@ -18,13 +18,7 @@ cache = MemoryCache()
 from vanna.remote import VannaDefault
 vn = VannaDefault(model=os.environ['VANNA_MODEL'], api_key=os.environ['VANNA_API_KEY'])
 
-vn.connect_to_snowflake(
-    account=os.environ['SNOWFLAKE_ACCOUNT'],
-    username=os.environ['SNOWFLAKE_USERNAME'],
-    password=os.environ['SNOWFLAKE_PASSWORD'],
-    database=os.environ['SNOWFLAKE_DATABASE'],
-    warehouse=os.environ['SNOWFLAKE_WAREHOUSE'],
-)
+vn.connect_to_sqlite(os.environ['VANNA_SQLITE_URL'])
 
 # NO NEED TO CHANGE ANYTHING BELOW THIS LINE
 def requires_cache(fields):
@@ -207,7 +201,12 @@ def get_question_history():
 
 @app.route('/')
 def root():
-    return app.send_static_file('index.html')
+    google_fonts_cdn = os.getenv('GOOGLE_FONTS_CDN', 'https://fonts.googleapis.com')
+    print(google_fonts_cdn)
+    return render_template('index.html',google_fonts_cdn=google_fonts_cdn)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug = os.getenv("DEBUG",'true').lower()=='true'
+    port = int(os.getenv('PORT', 5000))
+    host = os.getenv('HOST', '127.0.0.1')
+    app.run(host=host,port=port,debug=debug)
